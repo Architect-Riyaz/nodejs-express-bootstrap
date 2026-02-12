@@ -1,0 +1,79 @@
+---
+- name: Deploy Docker Compose file
+  hosts: production-server
+  become: true
+
+  tasks:
+    - name: Check if Docker is installed
+      shell: docker --version
+      register: docker_check
+      ignore_errors: true
+
+    - name: Install Docker if necessary
+      apt:
+        name: docker.io
+        state: present
+      when: docker_check.rc != 0
+
+    - name: Check if docker-compose is installed
+      shell: docker-compose --version
+      register: docker_compose_output
+      ignore_errors: true
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+
+    - name: Install docker-compose
+      apt:
+        name: docker-compose
+        state: present
+      when: docker_compose_output.rc != 0
+
+    ## Transfer Docker images to server
+    - name: Copy Docker images to server
+      copy:
+        src: /tmp/{{ item }}.tar
+        dest: /root/{{ item }}.tar
+      with_items:
+        - api
+        - mongo
+
+    - name: Load Docker images on server
+      command: docker load -i /root/{{ item }}.tar
+      with_items:
+        - api
+        - mongo
+
+    - name: Copy run.yml to server
+      copy:
+        src: ./run.yml
+        dest: /root/docker-compose.yml
+
+    - name: Stop Docker containers
+      command: docker-compose down
+      args:
+        chdir: /root/
+
+    - name: Start Docker containers
+      command: docker-compose up -d
+      args:
+        chdir: /root/
+
+    - name: Add Docker service to start on boot
+      systemd:
+        name: docker
+        enabled: yes
+
+    - name: Remove build files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ build_files }}"
+
+  vars:
+    build_files:
+      - /root/docker-compose.yml
+      - /root/api.tar
+      - /root/mongo.tar

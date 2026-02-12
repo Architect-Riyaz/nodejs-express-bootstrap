@@ -1,0 +1,13 @@
+node_modules
+*.http
+.env
+.env.prod
+.env.local
+public/*
+!public/uploads/.gitkeep
+*.log
+firebase*.json
+test
+.vscode
+deploy/hosts
+logs

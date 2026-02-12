@@ -1,0 +1,10 @@
+node_modules
+*.http
+public/*
+!public/uploads/.gitkeep
+*.log
+firebase*.json
+test
+.vscode
+.git
+logs

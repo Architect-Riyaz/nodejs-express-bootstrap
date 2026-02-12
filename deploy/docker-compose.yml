@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+
+  mongo:
+    image: mongo:4.4
+    container_name: mongodb-container
+    restart: always
+    networks:
+      - my-network
+    volumes:
+      - mongodb-data:/data/db
+
+  nodejs:
+    build:
+      context: ..
+      dockerfile: ./deploy/Dockerfile
+    image: api:latest
+    container_name: nodejs-container
+    restart: always
+    networks:
+      - my-network
+    environment:
+      - PORT=5002
+      - NODE_ENV=production
+      - MONGODB_URL=mongodb://mongo:27017/v1db
+    ports:
+      - "5002:5002"
+networks:
+  my-network:
+
+volumes:
+  mongodb-data:
